@@ -31,7 +31,6 @@ import mathutils
 import math
 import copy
 
-relMode = 0
 
 bl_info = {
     'name': 'Import GCode',
@@ -53,7 +52,14 @@ class IMPORT_OT_gcode(bpy.types.Operator):
     bl_label = "Import gcode" +' v.'+ __version__
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-
+    
+    '''Define the size of your print bed here. Only X and Y are needed to "center" the part on the origin
+    If this size is different here to that of the size in your slicer and in blender's grid setup, parts may appear to be off center.
+    Don't use this g-code importer as an indication of whether the part will be centered, it is merely to
+    visualise the code to get a look at it.'''
+    bed_x = 200
+    bed_y = 200
+    
     filename_ext = ".gcode"
 
     filter_glob = StringProperty(
@@ -61,7 +67,7 @@ class IMPORT_OT_gcode(bpy.types.Operator):
             options={'HIDDEN'},
             )
 
-    filepath = bpy.props.StringProperty(name="File Path", description="Filepath used for importing the GCode file", maxlen= 1024, default= "")
+    filepath = bpy.props.StringProperty(name="File Path", description="Filepath used for importing the GCode file", maxlen= 1024, default= "")       
             
     def __init__(self):
         # current tool position
@@ -235,6 +241,8 @@ class IMPORT_OT_gcode(bpy.types.Operator):
     
     ##### moveTo #####
     def moveTo(self, newPos):
+        bed_x = self.bed_x/2
+        bed_y = self.bed_y/2
         if newPos['Z'] != self.pos['Z']:
             delta = newPos['Z'] - self.pos['Z']
             self.newLayer(delta)
@@ -243,16 +251,16 @@ class IMPORT_OT_gcode(bpy.types.Operator):
                     self.newPoly()
         		
             if newPos['E'] > 0 and newPos['E'] >= self.pos['E']:
-                self.points.append([newPos['X']-100,
-                                newPos['Y']-100,
+                self.points.append([newPos['X']-bed_x,
+                                newPos['Y']-bed_y,
                                 newPos['Z']])
         else:
             if newPos['E'] <= 0.0:
                     self.newPoly()
         		
             if newPos['E'] > 0 or newPos['E'] >= self.pos['E']:
-                self.points.append([newPos['X']-100,
-                                newPos['Y']-100,
+                self.points.append([newPos['X']-bed_x,
+                                newPos['Y']-bed_y,
                                 newPos['Z']])
 								
         # should this be an explicit copy?
