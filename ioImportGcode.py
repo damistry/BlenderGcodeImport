@@ -21,12 +21,20 @@
 import string
 import os
 import bpy
+from bpy.props import (StringProperty,
+                       BoolProperty,
+                       CollectionProperty,
+                       EnumProperty,
+                       FloatProperty,
+                       )
 import mathutils
 import math
 import copy
 
+relMode = 0
+
 bl_info = {
-    'name': 'Import Slic3r GCode',
+    'name': 'Import GCode',
     'author': 'Lee Butler',
     'version': (0,1,0),
     'blender': (2, 7, 0),
@@ -46,8 +54,15 @@ class IMPORT_OT_gcode(bpy.types.Operator):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
 
-    filepath = bpy.props.StringProperty(name="File Path", description="Filepath used for importing the GCode file", maxlen= 1024, default= "")
+    filename_ext = ".gcode"
 
+    filter_glob = StringProperty(
+            default="*.gcode",
+            options={'HIDDEN'},
+            )
+
+    filepath = bpy.props.StringProperty(name="File Path", description="Filepath used for importing the GCode file", maxlen= 1024, default= "")
+            
     def __init__(self):
         # current tool position
         self.pos = {'X':0.0, 'Y':0.0, 'Z':0.0, 'E':0.0}
@@ -111,8 +126,8 @@ class IMPORT_OT_gcode(bpy.types.Operator):
         f.close()
         self.newLayer(-1.0)
         
-        #print ('---------- build ------------')
-        #print (' %d slices' % len(self.layers) )
+        print ('---------- build ------------')
+        print (' %d slices' % len(self.layers) )
         #print (' deltaZ values:')
         count = 0
         radius = 0
@@ -223,15 +238,23 @@ class IMPORT_OT_gcode(bpy.types.Operator):
         if newPos['Z'] != self.pos['Z']:
             delta = newPos['Z'] - self.pos['Z']
             self.newLayer(delta)
-        
-        if newPos['E'] <= self.pos['E'] or newPos['E'] <= 0.0:
-            self.newPoly()
-        
-        if newPos['E'] > 0 and newPos['E'] >= self.pos['E']:
-            self.points.append([newPos['X'],
-                            newPos['Y'],
-                            newPos['Z']])
-        
+        if relMode != 1:
+            if newPos['E'] <= self.pos['E'] or newPos['E'] <= 0.0:
+                    self.newPoly()
+        		
+            if newPos['E'] > 0 and newPos['E'] >= self.pos['E']:
+                self.points.append([newPos['X']-100,
+                                newPos['Y']-100,
+                                newPos['Z']])
+        else:
+            if newPos['E'] <= 0.0:
+                    self.newPoly()
+        		
+            if newPos['E'] > 0 or newPos['E'] >= self.pos['E']:
+                self.points.append([newPos['X']-100,
+                                newPos['Y']-100,
+                                newPos['Z']])
+								
         # should this be an explicit copy?
         self.pos = copy.deepcopy(newPos)
 
@@ -264,7 +287,6 @@ class IMPORT_OT_gcode(bpy.types.Operator):
 
     def G0(self, tokens):
         '''move fast'''
-
         newPos = self.parseCoordsUpdate(tokens)
         self.moveTo(newPos)
         
@@ -294,6 +316,10 @@ class IMPORT_OT_gcode(bpy.types.Operator):
     def G90(self, tokens):
         '''set absolute positioning'''
         pass
+        
+    def G91(self,tokens):
+        '''set relative positioning'''
+        pass
 
     def G92(self, tokens):
         '''set position'''
@@ -309,7 +335,15 @@ class IMPORT_OT_gcode(bpy.types.Operator):
 
     def M82(self, tokens):
         '''set extruder absolute mode'''
-        pass
+        global relMode
+        relMode = 0
+        print ('Absolute extrusion mode detected')
+
+    def M83(self, tokens):
+        '''set extruder relative mode'''
+        global relMode
+        relMode = 1
+        print ('Relative extrusion mode detected')
 
     def M84(self, tokens):
         '''stop idle hold'''
@@ -317,6 +351,10 @@ class IMPORT_OT_gcode(bpy.types.Operator):
 
     def M104(self,tokens):
         '''set extruder temperature'''
+        pass
+        
+    def M105(self,tokens):
+        '''get extruder temperature'''
         pass
 
     def M106(self, tokens):
@@ -328,14 +366,23 @@ class IMPORT_OT_gcode(bpy.types.Operator):
         pass
 
     def M109(self,tokens):
-        '''set extruder temperature and wait'''
+        '''set extruder temperature and wait until target temperature is reached'''
         pass
-
-
-
-
+        
+    def M117(self,tokens):
+        '''print message on attached LCD screen'''
+        pass
+        
+    def M140(self,tokens):
+        '''set bed temperature and return to normal operation'''
+        pass
+        
+    def M190(self,tokens):
+        '''set bed temperature and wait until target temperature is reached'''
+        pass        
+		
 def menu_func(self, context):
-    self.layout.operator(IMPORT_OT_gcode.bl_idname, text="Slic3r GCode (.gcode)", icon='PLUGIN')
+    self.layout.operator(IMPORT_OT_gcode.bl_idname, text="Import GCode (.gcode)", icon='PLUGIN')
 
 def register():
     bpy.utils.register_module(__name__)
