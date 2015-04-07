@@ -31,6 +31,7 @@ import mathutils
 import math
 import copy
 
+relMode = 0
 
 bl_info = {
     'name': 'Import GCode',
