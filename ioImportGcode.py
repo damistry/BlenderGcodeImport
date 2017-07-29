@@ -205,7 +205,7 @@ class IMPORT_OT_gcode(bpy.types.Operator):
             layerObject.keyframe_insert("hide_render")
             # and make them reappear
             scn.frame_set(layerNum)
-            #print('frame '+str(layerName))
+            print('Processing frame '+str(layerName))
             layerObject.hide = False
             layerObject.hide_render = False
             layerObject.keyframe_insert("hide")
