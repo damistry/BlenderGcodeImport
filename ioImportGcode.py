@@ -168,7 +168,8 @@ class IMPORT_OT_gcode(bpy.types.Operator):
         scn = bpy.context.scene
         scn.objects.link(profileObject)
         scn.objects.active = profileObject
-
+        scn.frame_end = len(self.layers)
+        scn.frame_set(0)
 
         for layerNum,layer in enumerate(self.layers):
 
@@ -197,7 +198,18 @@ class IMPORT_OT_gcode(bpy.types.Operator):
             layerObject = bpy.data.objects.new(layerName, curveData)
             scn.objects.link(layerObject)
             scn.objects.active = layerObject
-
+            #hide layers and set keyframes
+            layerObject.hide = True
+            layerObject.hide_render = True
+            layerObject.keyframe_insert("hide")
+            layerObject.keyframe_insert("hide_render")
+            # and make them reappear
+            scn.frame_set(layerNum)
+            #print('frame '+str(layerName))
+            layerObject.hide = False
+            layerObject.hide_render = False
+            layerObject.keyframe_insert("hide")
+            layerObject.keyframe_insert("hide_render")
 
         # print('-------------- done -------------')
 
