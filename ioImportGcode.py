@@ -394,10 +394,6 @@ def menu_func(self, context):
     self.layout.operator_context = 'INVOKE_DEFAULT'
     self.layout.operator(IMPORT_OT_gcode.bl_idname, text="Import GCode (.gcode)", icon='PLUGIN')
 
-# classes = ( IMPORT_OT_gcode )
-
-# register, unregister = bpy.utils.register_classes_factory(IMPORT_OT_gcode)
-
 def register():
     from bpy.utils import register_class
     register_class(IMPORT_OT_gcode)
